@@ -1,16 +1,30 @@
 import connection from "../database/db.js";
+import { DateTime } from "luxon";
 
 function index(req, res, next) {
   const query = `
-  SELECT *
-  FROM movies;
+  SELECT movies.*, CAST(AVG(reviews.vote) AS DECIMAL(2,1)) AS avg_vote
+  FROM movies
+  LEFT JOIN reviews
+  ON movies.id = reviews.movie_id
+  GROUP BY movies.id;
   `;
 
   connection.query(query, (err, results) => {
     if (err) return next(err);
 
+    const movies = results.map((movie) => {
+      return {
+        ...movie,
+        image: `${process.env.SERVER_URL}/img/${movie.image}`,
+        updated_at: DateTime.fromJSDate(movie.updated_at).toLocaleString(),
+        created_at: DateTime.fromJSDate(movie.created_at).toLocaleString(),
+      };
+    });
+
     res.json({
-      results,
+      count: movies.length,
+      result: movies,
     });
   });
 }
@@ -35,7 +49,16 @@ function show(req, res, next) {
       });
     }
 
-    const movie = results[0];
+    const movies = results.map((movie) => {
+      return {
+        ...movie,
+        image: `${process.env.SERVER_URL}/img/${movie.image}`,
+        created_at: DateTime.fromJSDate(movie.created_at).toLocaleString(),
+        updated_at: DateTime.fromJSDate(movie.updated_at).toLocaleString(),
+      };
+    });
+
+    const movie = movies[0];
 
     const reviewsQuery = `
       SELECT reviews.* 
@@ -45,12 +68,20 @@ function show(req, res, next) {
       WHERE movie_id = ?;
     `;
 
-    connection.query(reviewsQuery, [id], (err, results) => {
+    connection.query(reviewsQuery, [id], (err, resultReviews) => {
       if (err) return next(err);
+
+      const movieReviews = resultReviews.map((review) => {
+        return {
+          ...review,
+          created_at: DateTime.fromJSDate(review.created_at).toLocaleString(),
+          updated_at: DateTime.fromJSDate(review.updated_at).toLocaleString(),
+        };
+      });
 
       const respData = {
         ...movie,
-        results,
+        movieReviews,
       };
 
       res.json(respData);

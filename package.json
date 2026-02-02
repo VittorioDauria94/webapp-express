@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "express": "^5.2.1",
+    "luxon": "^3.7.2",
     "mysql2": "^3.16.2"
   }
 }
