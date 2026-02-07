@@ -30,15 +30,18 @@ function index(req, res, next) {
 }
 
 function show(req, res, next) {
-  const { id } = req.params;
+  const { slug } = req.params;
 
   const movieQuery = `
-    SELECT * 
+    SELECT movies.*, CAST(AVG(reviews.vote) AS DECIMAL(2,1)) AS avg_vote
     FROM movies
-    WHERE movies.id = ?;
+    LEFT JOIN reviews
+    ON movies.id = reviews.movie_id
+    WHERE slug = ?
+    GROUP BY movies.id;
     `;
 
-  connection.query(movieQuery, [id], (err, results) => {
+  connection.query(movieQuery, [slug], (err, results) => {
     if (err) return next(err);
 
     if (results.length === 0) {
@@ -65,10 +68,10 @@ function show(req, res, next) {
       FROM movies
       LEFT JOIN reviews
       ON movies.id = reviews.movie_id
-      WHERE movie_id = ?;
+      WHERE slug = ?;
     `;
 
-    connection.query(reviewsQuery, [id], (err, resultReviews) => {
+    connection.query(reviewsQuery, [slug], (err, resultReviews) => {
       if (err) return next(err);
 
       const movieReviews = resultReviews.map((review) => {
