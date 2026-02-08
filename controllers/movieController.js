@@ -2,15 +2,30 @@ import connection from "../database/db.js";
 import { DateTime } from "luxon";
 
 function index(req, res, next) {
-  const query = `
+  const { search } = req.query;
+
+  let params = [];
+  let query = `
   SELECT movies.*, CAST(AVG(reviews.vote) AS DECIMAL(2,1)) AS avg_vote
   FROM movies
   LEFT JOIN reviews
   ON movies.id = reviews.movie_id
+  `;
+
+  if (search) {
+    query += `
+    WHERE movies.title LIKE ? 
+    OR movies.genre LIKE ? 
+    OR movies.director LIKE ?`;
+
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  query += `
   GROUP BY movies.id;
   `;
 
-  connection.query(query, (err, results) => {
+  connection.query(query, params, (err, results) => {
     if (err) return next(err);
 
     const movies = results.map((movie) => {
@@ -37,7 +52,7 @@ function show(req, res, next) {
     FROM movies
     LEFT JOIN reviews
     ON movies.id = reviews.movie_id
-    WHERE slug = ?
+    WHERE movies.slug = ?
     GROUP BY movies.id;
     `;
 
@@ -64,14 +79,12 @@ function show(req, res, next) {
     const movie = movies[0];
 
     const reviewsQuery = `
-      SELECT reviews.* 
-      FROM movies
-      LEFT JOIN reviews
-      ON movies.id = reviews.movie_id
-      WHERE slug = ?;
+    SELECT *
+    FROM reviews
+    WHERE movie_id = ?;
     `;
 
-    connection.query(reviewsQuery, [slug], (err, resultReviews) => {
+    connection.query(reviewsQuery, [movie.id], (err, resultReviews) => {
       if (err) return next(err);
 
       const movieReviews = resultReviews.map((review) => {
