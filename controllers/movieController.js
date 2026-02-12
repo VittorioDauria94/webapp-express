@@ -1,3 +1,4 @@
+import slugify from "slugify";
 import connection from "../database/db.js";
 import { DateTime } from "luxon";
 
@@ -105,4 +106,30 @@ function show(req, res, next) {
   });
 }
 
-export default { index, show };
+function store(req, res, next) {
+  const { title, director, genre, releaseYear, abstract, image } = req.body;
+
+  const slug = slugify(title, {
+    lower: true,
+    strict: true,
+  });
+
+  const query = `
+  INSERT INTO movies (slug, title, director, genre, release_year, abstract, image) 
+    VALUES (?, ?, ?, ?, ?, ?, ? );
+  `;
+
+  connection.query(
+    query,
+    [slug, title, director, genre, releaseYear, abstract, image],
+    (err, results) => {
+      if (err) next(err);
+      res.status(201);
+      res.json({
+        message: "Movie added correctly",
+      });
+    },
+  );
+}
+
+export default { index, show, store };
