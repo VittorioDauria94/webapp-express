@@ -107,7 +107,9 @@ function show(req, res, next) {
 }
 
 function store(req, res, next) {
-  const { title, director, genre, releaseYear, abstract, image } = req.body;
+  const { title, director, genre, releaseYear, abstract} = req.body;
+
+   const imageName = req.file?.filename ?? null;
 
   const slug = slugify(title, {
     lower: true,
@@ -121,7 +123,7 @@ function store(req, res, next) {
 
   connection.query(
     query,
-    [slug, title, director, genre, releaseYear, abstract, image],
+    [slug, title, director, genre, releaseYear, abstract, imageName],
     (err, results) => {
       if (err) next(err);
       res.status(201);
