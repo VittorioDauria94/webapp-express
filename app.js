@@ -1,5 +1,6 @@
 import express from "express";
 import moviesRouter from "./routers/movies.js";
+import reviewsRouter from "./routers/reviews.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import routeNotFound from "./middlewares/routeNotfound.js";
 import cors from "cors";
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/movies", moviesRouter);
+app.use("/api/reviews", reviewsRouter);
 
 app.use(errorHandler);
 
